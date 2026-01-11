@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Country {
+  id            String   @id @default(uuid())
+  name          String
+  iso2          String   @unique
+  population    Int
+  riskIndex     Float    @default(0)
+  victims       Victim[]
+}
+
+model RansomwareGroup {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  active    Boolean  @default(true)
+  victims   Victim[]
+}
+
+model Sector {
+  id       String   @id @default(uuid())
+  name     String   @unique // Healthcare, Education, Govt, Finance, etc.
+  weight   Int      // Criticality weight
+  victims  Victim[]
+}
+
+model Victim {
+  id           String   @id @default(uuid())
+  name         String
+  slug         String   @unique
+  countryId    String
+  sectorId     String
+  groupId      String
+  dataType     String   // Medical, Financial, Academic, etc.
+  impactScore  Float
+  discoveredAt DateTime @default(now())
+  proofUrl     String?
+  confidence   String   @default("LOW") // LOW, MEDIUM, HIGH
+  verifiedBy   String?
+  reviewedAt   DateTime?
+  country      Country @relation(fields: [countryId], references: [id])
+  sector       Sector @relation(fields: [sectorId], references: [id])
+  group        RansomwareGroup @relation(fields: [groupId], references: [id])
+  alerts       Alert[]
+}
+
+model Alert {
+  id        String   @id @default(uuid())
+  victimId  String
+  level     String   // CRITICAL, HIGH, MEDIUM
+  message   String
+  sent      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  victim    Victim   @relation(fields: [victimId], references: [id])
+}
